@@ -1,46 +1,32 @@
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+import { Resend } from 'resend';
 
-  let body = '';
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  // Collect the raw request body
-  req.on('data', chunk => {
-    body += chunk.toString();
-  });
-
-  req.on('end', async () => {
-    try {
-      const data = JSON.parse(body);
-      const email = data.email;
-
-      if (!email) {
-        return res.status(400).json({ error: 'Missing email' });
-      }
-
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'hello@straja.ai',
-          to: email,
-          subject: 'Your free license key',
-          text: 'Thank you! You’ll receive your license key as soon as we launch.',
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.text();
-        return res.status(500).json({ error: 'Resend failed: ' + err });
-      }
-
-      res.status(200).json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: 'Invalid JSON or internal error: ' + err.message });
+export default async (req, res) => {
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
-  });
-}
+
+    const { email } = JSON.parse(req.body);
+    console.log('Received email:', email);
+
+    if (!email) {
+      console.error('Missing email in request body');
+      return res.status(400).json({ error: 'Missing email' });
+    }
+
+    const response = await resend.emails.send({
+      from: 'Straja <hello@straja.ai>',
+      to: email,
+      subject: 'Your Straja.ai License Key',
+      html: `<p>Thanks for signing up. Your free license key will be sent to you when we launch.</p>`,
+    });
+
+    console.log('Email sent:', response);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error in send-license function:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
