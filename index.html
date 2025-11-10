@@ -626,7 +626,12 @@
   </button>
 
   <!-- Success / error line -->
-  <p id="formMsg" class="col-span-full text-sm text-slate-600"></p>
+  <div id="formMsg" class="col-span-full hidden flex items-center gap-2 rounded-md border border-green-500 bg-green-50 px-4 py-2 text-sm text-green-800 shadow-sm">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 111.414-1.414L8.414 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+  </svg>
+  <span>License key sent! Check your inbox.</span>
+</div>
 
   <!-- GDPR note -->
   <p id="consentNote" class="col-span-full mt-1 text-xs leading-relaxed text-slate-500">
@@ -672,13 +677,16 @@
       const data = await res.json();
 
       if (res.ok) {
-        msg.textContent = '✅ License key sent!';
+        msg.classList.remove('hidden');
+        msg.querySelector('span').textContent = 'License key sent! Check your inbox.';
         form.reset();
       } else {
-        msg.textContent = `❌ ${data.error || 'Something went wrong.'}`;
+        msg.classList.remove('hidden');
+        msg.querySelector('span').textContent = 'Something went wrong.';
       }
     } catch (err) {
-      msg.textContent = '❌ Network error. Please try again.';
+        msg.classList.remove('hidden');
+        msg.querySelector('span').textContent = 'Something went wrong.';
     }
   });
 </script>
