@@ -665,7 +665,9 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
-    msg.textContent = 'Sending…';
+
+    msg.classList.remove('hidden');
+    msg.querySelector('span').textContent = 'Sending…';
 
     try {
       const res = await fetch('/api/send-license', {
@@ -677,17 +679,17 @@
       const data = await res.json();
 
       if (res.ok) {
-        msg.classList.remove('hidden');
         msg.querySelector('span').textContent = 'License key sent! Check your inbox.';
         form.reset();
       } else {
-        msg.classList.remove('hidden');
         msg.querySelector('span').textContent = 'Something went wrong.';
       }
     } catch (err) {
-        msg.classList.remove('hidden');
-        msg.querySelector('span').textContent = 'Something went wrong.';
+      msg.querySelector('span').textContent = 'Something went wrong.';
     }
+
+    // Optional: auto-hide message
+    setTimeout(() => msg.classList.add('hidden'), 5000);
   });
 </script>
 </body>
