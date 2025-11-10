@@ -604,43 +604,36 @@
       Secure your free Straja license key today. We’ll send it to your inbox
       as soon as early access opens.
     </p>
+<form
+  id="waitlistForm"
+  class="mx-auto mt-6 grid gap-3 md:grid-cols-[1fr_auto]"
+  aria-describedby="consentNote"
+>
+  <label class="sr-only" for="email">Work email</label>
+  <input
+    id="email"
+    name="email"
+    type="email"
+    required
+    placeholder="you@company.com"
+    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none"
+  />
+  <button
+    type="submit"
+    class="rounded-xl bg-accent-600 px-5 py-3 font-semibold text-white shadow-glow hover:bg-accent-500"
+  >
+    Get a free license key
+  </button>
 
-    <form
-      id="waitlistForm"
-      action="/api/send-license" 
-      method="POST"
-      class="mx-auto mt-6 grid gap-3 md:grid-cols-[1fr_auto]"
-      aria-describedby="consentNote"
-    >
-      <label class="sr-only" for="email">Work email</label>
-      <input
-        id="email"
-        name="email"
-        type="email"
-        required
-        placeholder="you@company.com"
-        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none"
-      />
-      <button
-        type="submit"
-        class="rounded-xl bg-accent-600 px-5 py-3 font-semibold text-white shadow-glow hover:bg-accent-500"
-      >
-        Get a free license key
-      </button>
+  <!-- Success / error line -->
+  <p id="formMsg" class="col-span-full text-sm text-slate-600"></p>
 
-      <!-- Success / error line -->
-      <p id="formMsg" class="col-span-full text-sm text-slate-600"></p>
-
-      <!-- GDPR note -->
-      <p id="consentNote" class="col-span-full mt-1 text-xs leading-relaxed text-slate-500">
-        By submitting, you agree we may email you <em>one</em> message with your license key when Straja launches and occasional
-        updates about Straja. You can unsubscribe anytime.
-      </p>
-    </form>
-   <!-- 
-    <p class="mt-4 text-center text-xs text-slate-500">
-      We’ll never sell your data. No spam.
-    </p>-->
+  <!-- GDPR note -->
+  <p id="consentNote" class="col-span-full mt-1 text-xs leading-relaxed text-slate-500">
+    By submitting, you agree we may email you <em>one</em> message with your license key when Straja launches and occasional
+    updates about Straja. You can unsubscribe anytime.
+  </p>
+</form>
   </div>
 </section>
 
@@ -661,25 +654,31 @@
   </footer>
 
 <script>
-  const btn = document.getElementById('menuBtn');
-  const menu = document.getElementById('mobileMenu');
-  btn?.addEventListener('click', () => menu.classList.toggle('hidden'));
-
   const form = document.getElementById('waitlistForm');
   const msg = document.getElementById('formMsg');
-  form?.addEventListener('submit', async (e) => {
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const data = new FormData(form);
-    const res = await fetch(form.action, {
-      method: 'POST',
-      body: data,
-      headers: { 'Accept': 'application/json' }
-    });
-    if (res.ok) {
-      msg.textContent = '✅ Thanks! Your free license key will arrive as soon as early access opens.';
-      form.reset();
-    } else {
-      msg.textContent = '❌ Something went wrong. Please try again in a moment.';
+    const email = document.getElementById('email').value;
+    msg.textContent = 'Sending…';
+
+    try {
+      const res = await fetch('/api/send-license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        msg.textContent = '✅ License key sent!';
+        form.reset();
+      } else {
+        msg.textContent = `❌ ${data.error || 'Something went wrong.'}`;
+      }
+    } catch (err) {
+      msg.textContent = '❌ Network error. Please try again.';
     }
   });
 </script>
