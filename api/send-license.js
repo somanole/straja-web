@@ -10,14 +10,14 @@ export default async (req, res) => {
 
     let body = '';
 
-    // Collect incoming data
     req.on('data', chunk => {
       body += chunk.toString();
     });
 
-    // After all data is received
     req.on('end', async () => {
       try {
+        console.log('Raw body received:', body);  // 🔍 ADD THIS LINE
+
         const { email } = JSON.parse(body);
         if (!email) {
           return res.status(400).json({ error: 'Missing email' });
