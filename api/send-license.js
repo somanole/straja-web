@@ -1,39 +1,46 @@
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-/**
- * Vercel custom API route handler (not Next.js)
- */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const body = await new Promise((resolve, reject) => {
-      let data = '';
-      req.on('data', chunk => (data += chunk));
-      req.on('end', () => resolve(JSON.parse(data)));
-      req.on('error', err => reject(err));
-    });
+  let body = '';
 
-    const { email } = body;
+  // Collect the raw request body
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
 
-    if (!email) {
-      return res.status(400).json({ error: 'Missing email' });
+  req.on('end', async () => {
+    try {
+      const data = JSON.parse(body);
+      const email = data.email;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Missing email' });
+      }
+
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'hello@straja.ai',
+          to: email,
+          subject: 'Your free license key',
+          text: 'Thank you! You’ll receive your license key as soon as we launch.',
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        return res.status(500).json({ error: 'Resend failed: ' + err });
+      }
+
+      res.status(200).json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Invalid JSON or internal error: ' + err.message });
     }
-
-    await resend.emails.send({
-      from: 'hello@straja.ai',
-      to: email,
-      subject: 'Your Straja license key',
-      html: '<strong>Your license key: XXXX-XXXX</strong>',
-    });
-
-    return res.status(200).json({ ok: true });
-  } catch (error) {
-    console.error('Email sending failed:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+  });
 }
