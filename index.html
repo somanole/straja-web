@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Straja.ai – Protect locally, activate everywhere.</title>
+  <meta name="description" content="Straja is a developer-first AI gateway that filters, classifies, and activates model traffic — turning AI interactions into safe, observable, and actionable events."/>
+  <meta property="og:title" content="Straja.ai"/>
+  <meta property="og:description" content="Protect locally, activate everywhere."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:image" content="/og-image.png"/>
+  <link rel="icon" type="image/svg+xml" href="logos/straja-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
+          colors: {
+            /* Deep green (brand) + fiery orange (accent) */
+            brand:  { 50:'#E6F6F1',100:'#CFF1E6',200:'#A7E3D3',300:'#7ED6BF',400:'#42C4A4',500:'#10B981',600:'#059669',700:'#047857',800:'#065F46',900:'#064E3B' },
+            accent: { 50:'#FFF3E9',100:'#FFE7D2',200:'#FFD0A6',300:'#FFB374',400:'#FF9445',500:'#F97316',600:'#EA580C',700:'#C2410C',800:'#9A3412',900:'#7C2D12' }
+          },
+          boxShadow: {
+            soft: '0 12px 30px rgba(6,95,70,0.10)',     /* greenish soft */
+            card: '0 8px 24px rgba(15,23,42,0.08)',
+            glow: '0 10px 30px rgba(234,88,12,0.28)'    /* orange glow */
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth }
+    /* Light, warm background blobs updated to brand/accent tints */
+    .blob { filter: blur(60px); opacity: .35 }
+    /* Hero gradient text: green -> orange */
+    .grad-text { background: linear-gradient(90deg,#047857,#059669,#F97316); -webkit-background-clip: text; background-clip: text; color: transparent }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace }
+  </style>
+
+  <!-- Carousel styles (unchanged behavior, colors matched to light bg) -->
+  <style>
+    /* Carousel viewport */
+    .logo-marquee {
+      position: relative;
+      overflow: hidden;
+      padding: 0 16px; /* room for edge fades */
+    }
+    /* Fades hinting overflow */
+    .logo-fade { position:absolute; top:0; bottom:0; width:28px; pointer-events:none; }
+    .logo-fade.left  { left:0;  background:linear-gradient(90deg,rgba(255,255,255,.9),rgba(255,255,255,0)); }
+    .logo-fade.right { right:0; background:linear-gradient(270deg,rgba(255,255,255,.9),rgba(255,255,255,0)); }
+
+    /* Track */
+    .logo-track {
+      display:flex; align-items:center; gap:1.25rem;
+      width:max-content; will-change:transform;
+      animation: marquee 30s linear infinite;
+    }
+    .logo-marquee:hover .logo-track { animation-play-state: paused; }
+    @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} } /* duplicate items in DOM */
+
+    /* Items */
+    .logo-item { display:flex; align-items:center; gap:.5rem; white-space:nowrap; }
+    .logo-img  { height:24px; width:auto; filter:grayscale(1); opacity:.85; }
+    .logo-img.thin { transform:scale(1.18); transform-origin:center; } /* Azure/Vertex */
+    .logo-text { font-weight:600; color:#334155; letter-spacing:.1px; }
+
+    /* Slightly tighter on small screens */
+    @media (max-width:640px){
+      .logo-track{ gap:.875rem }
+      .logo-img{ height:20px }
+      .logo-text{ font-size:.95rem }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce){
+      .logo-track{ animation:none }
+    }
+  </style>
+ <style>
+    :root{
+      --protect:#0D825B;
+      --protect-700:#0A6A4A;
+      --activate:#E86116;
+      --activate-bright:#FF9447;
+      --ink:#0F172A;
+      --body:#334155;
+      --line:#E2E8F0;
+      --surface:#F8FAFC;
+    }
+    html { scroll-behavior: smooth }
+    .blob { filter: blur(60px); opacity: .35 }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace }
+
+    /* Hero title tokens */
+    .title-protect   { color: var(--protect); }
+    .title-locally   {
+      background: linear-gradient(90deg, var(--protect) 0%, var(--activate) 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .title-activate  { color: var(--activate); }
+    .title-everywhere{
+      background: linear-gradient(90deg, var(--activate) 0%, var(--activate-bright) 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      filter: drop-shadow(0 3px 10px rgba(232, 97, 22, 0.20));
+    }
+  </style>
+<!-- Flow diagram card -->
+<style>
+  .flow-card{
+    position:relative;border-radius:22px;background:#fff;border:1px solid var(--line);
+    box-shadow:0 14px 36px rgba(2,6,23,.06),0 8px 22px rgba(6,95,70,.05);
+  }
+  .flow-card svg { overflow: visible; }
+  .flow-inner{ padding: 20px 32px 12px; }
+
+  /* Grid */
+  .flow-grid path{ stroke:#E2E8F0; stroke-opacity:.35; stroke-width:.8 }
+
+  /* Nodes */
+  .flow-node-glass{ fill:rgba(255,255,255,.78); backdrop-filter:blur(6px); }
+  .flow-label{ font:16px/1.15 Inter, ui-sans-serif, system-ui; fill:#0F172A; font-weight:800; }
+  .flow-subtle{ fill:#475569; font:12.5px Inter, ui-sans-serif, system-ui; }
+
+  /* Lines */
+  .flow-left { stroke: url(#g-flow); stroke-width:3; fill:none; stroke-linecap:round; }
+  .flow-left-under { stroke:rgba(15,23,42,.15); stroke-width:5; fill:none; stroke-linecap:round; }
+
+  /* Right-leg marching dots */
+  .signal circle{ r:3.1; fill:var(--activate-bright); opacity:.95; }
+  .signal .trail{ r:2.2; opacity:.5; }
+  @media (max-width:640px){ .flow-inner{ padding:20px 14px 10px } }
+  /* Legend styling under flow diagram */
+.flow-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 1rem 2rem 1.5rem;
+  border-top: 1px solid var(--line);
+  background: #fff;
+  border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.flow-legend span {
+  font-family: 'Inter', ui-sans-serif, system-ui;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 22px;
+  color: #0F172A;
+  letter-spacing: 0.1px;
+}
+/* Bigger, clearer labels inside the diagram */
+.flow-title { font: 600 16px/20px Inter, ui-sans-serif, system-ui; fill: #0F172A; }
+.flow-sub   { font: 500 13px/18px Inter, ui-sans-serif, system-ui; fill: #64748B; }
+
+/* Slightly thicker node border so larger boxes feel crisp */
+.flow-node {
+  fill: #fff;
+  stroke: var(--line);
+  stroke-width: 1.25;
+  filter: drop-shadow(0 2px 4px rgba(15,23,42,0.08));
+}
+</style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <!-- Background blobs (updated colors) 
+  <div class="pointer-events-none fixed inset-0 -z-50">
+    <div class="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-brand-200 blob"></div>
+    <div class="absolute top-40 -right-16 h-80 w-80 rounded-full bg-accent-100 blob"></div>
+    <div class="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-accent-50 blob"></div>
+  </div>-->
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <a href="#top" class="flex items-center gap-2">
+  <img src="logos/straja-mark.svg" alt="" class="h-5 w-5" />
+  <span class="text-lg font-semibold tracking-tight">
+    Straja.ai</span>
+  </span>
+</a>
+      <nav class="hidden items-center gap-6 md:flex">
+        <a href="#how" class="text-sm font-medium text-slate-600 hover:text-slate-900">How it works</a>
+        <a href="#pillars" class="text-sm font-medium text-slate-600 hover:text-slate-900">Pillars</a>
+        <a href="#architecture" class="text-sm font-medium text-slate-600 hover:text-slate-900">Architecture</a>
+        <a href="#why" class="text-sm font-medium text-slate-600 hover:text-slate-900">Why Straja</a>
+        <a href="#roadmap" class="text-sm font-medium text-slate-600 hover:text-slate-900">Roadmap</a>
+        <!-- CTA now uses accent (orange) -->
+        <a href="#signup" class="rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white shadow-glow hover:bg-accent-500">Get a free license key</a>
+      </nav>
+      <button id="menuBtn" class="md:hidden inline-flex items-center justify-center rounded-md p-2 hover:bg-slate-100" aria-label="Open menu">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6"><path fill-rule="evenodd" d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" /></svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="md:hidden hidden border-t border-slate-200 bg-white/95">
+      <div class="mx-auto max-w-6xl px-4 py-3 grid gap-2">
+        <a href="#how" class="py-2 font-medium text-slate-700">How it works</a>
+        <a href="#pillars" class="py-2 font-medium text-slate-700">Pillars</a>
+        <a href="#architecture" class="py-2 font-medium text-slate-700">Architecture</a>
+        <a href="#why" class="py-2 font-medium text-slate-700">Why Straja</a>
+        <a href="#roadmap" class="py-2 font-medium text-slate-700">Roadmap</a>
+        <a href="index.html#signup"
+   class="mt-2 mx-auto w-fit rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white shadow-glow hover:bg-accent-500 transition">
+   Get a free license key
+</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section id="top" class="relative overflow-hidden">
+    <!-- Hero-only blobs (scroll with hero) -->
+<div class="pointer-events-none absolute inset-0 -z-10">
+  <div class="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-brand-200 blob"></div>
+  <!-- make this one orange; swap bg-accent-100 / 200 to taste -->
+  <div class="absolute top-40 -right-16 h-80 w-80 rounded-full bg-accent-100 blob"></div>
+  <!-- optional: remove or keep the third; here omitted per your preference -->
+</div>
+    <div class="mx-auto max-w-6xl px-4 pt-20 pb-16 md:pt-28 md:pb-24">
+      <div class="grid items-center gap-12 md:grid-cols-2">
+        <div>
+          <p class="text-xs uppercase font-semibold tracking-widest">Developer-first AI gateway</p>
+          <h1 class="mt-2 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
+            <span class="title-protect">Protect</span>
+            <span class="title-locally">locally,</span>
+            <span class="title-activate">activate</span>
+            <span class="title-everywhere">everywhere.</span>
+          </h1>
+          <p class="mt-5 text-lg text-slate-700">Straja filters, classifies, and activates model traffic — turning AI interactions into safe, observable, and actionable events inside your own infrastructure.</p>
+          <div class="mt-7 flex flex-wrap gap-3">
+            <!-- Primary CTA = accent (orange), Secondary = neutral -->
+            <a href="#signup" class="rounded-full bg-accent-600 px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-accent-500">Get a free license key</a>
+            <a href="#how" class="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-white">Read the architecture</a>
+          </div>
+          <p class="mt-4 text-xs text-slate-500">Free, local, open-source, developer-first. No data leaves your infra.</p>
+        </div>
+        <div class="relative">
+          <div class="flow-card">
+  <div class="flow-inner">
+    <svg viewBox="0 0 800 260" class="w-full overflow-visible mx-auto block" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-flow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"  stop-color="var(--protect)"/>
+      <stop offset="100%" stop-color="var(--activate)"/>
+    </linearGradient>
+    <symbol id="dot"><circle r="4.5" fill="var(--activate)"/></symbol>
+<symbol id="prompt-dot">
+  <circle r="5.0" fill="var(--protect)"/>
+  <!-- Optional tiny halo:
+  <circle r="6.5" fill="var(--protect)" opacity=".12"/>
+  -->
+</symbol>
+  </defs>
+
+  <!-- NODES (bigger) -->
+  <!-- Your App -->
+  <!-- box: 180×76 at (40,96) | center x=130 -->
+  <rect class="flow-node" x="40" y="96" rx="14" ry="14" width="180" height="76"/>
+  <text class="flow-title" x="130" y="126" text-anchor="middle">Your App</text>
+  <text class="flow-sub"   x="130" y="146" text-anchor="middle">SDK / Proxy</text>
+
+  <!-- Straja – Filter -->
+  <!-- box: 220×72 at (280,52) | center x=390 -->
+  <rect class="flow-node" x="280" y="52" rx="14" ry="14" width="220" height="72"/>
+  <text class="flow-title" x="390" y="82"  text-anchor="middle">Straja – Filter</text>
+  <text class="flow-sub"   x="390" y="100" text-anchor="middle">PII / Injection / Policy</text>
+
+  <!-- Straja – Classify -->
+  <!-- box: 220×72 at (280,164) | center x=390 -->
+  <rect class="flow-node" x="280" y="164" rx="14" ry="14" width="220" height="72"/>
+  <text class="flow-title" x="390" y="194" text-anchor="middle">Straja – Classify</text>
+  <text class="flow-sub"   x="390" y="212" text-anchor="middle">Labels / Scores</text>
+
+  <!-- LLM -->
+  <!-- box: 170×68 at (550,52) | center x=635 -->
+  <rect class="flow-node" x="550" y="52" rx="14" ry="14" width="210" height="72"/>
+<text class="flow-title" x="660" y="82"  text-anchor="middle">LLM</text>
+<text class="flow-sub"   x="660" y="100" text-anchor="middle">Any provider</text>
+
+  <!-- SIEM / Analytics -->
+  <!-- box: 210×72 at (550,164) | center x=655 -->
+  <rect class="flow-node" x="550" y="164" rx="14" ry="14" width="210" height="72"/>
+  <text class="flow-title" x="655" y="194" text-anchor="middle">SIEM / Analytics</text>
+  <text class="flow-sub"   x="655" y="212" text-anchor="middle">Events / Metrics</text>
+
+  <!-- FLOWS (re-anchored to new box edges) -->
+<!-- Invisible rails: keep the geometry, hide the stroke -->
+<path id="pL1" d="M180 130 C 215 130, 240 110, 270 88"
+      fill="none" stroke="none" />
+
+<path id="pL2" d="M180 130 C 215 130, 240 150, 270 172"
+      fill="none" stroke="none" />
+
+      <!-- ADD THIS HERE -->
+<!-- Moving prompts (green) from App → Filter / Classify -->
+<g class="left-packets">
+  <!-- Into Filter -->
+  <use href="#prompt-dot">
+    <animateMotion dur="1.35s" begin="0s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#pL1"/>
+    </animateMotion>
+  </use>
+  <use href="#prompt-dot">
+    <animateMotion dur="1.35s" begin=".22s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#pL1"/>
+    </animateMotion>
+  </use>
+  <use href="#prompt-dot">
+    <animateMotion dur="1.35s" begin=".44s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#pL1"/>
+    </animateMotion>
+  </use>
+
+  <!-- Into Classify -->
+  <use href="#prompt-dot">
+    <animateMotion dur="1.45s" begin="0s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#pL2"/>
+    </animateMotion>
+  </use>
+  <use href="#prompt-dot">
+    <animateMotion dur="1.45s" begin=".24s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#pL2"/>
+    </animateMotion>
+  </use>
+  <use href="#prompt-dot">
+    <animateMotion dur="1.45s" begin=".48s" repeatCount="indefinite" rotate="auto">
+      <mpath xlink:href="#pL2"/>
+    </animateMotion>
+  </use>
+</g>
+
+  <!-- Filter -> LLM -->
+  <path id="p3" class="flow-line"
+        marker-end="url(#arrow-green)"
+        d="M500 88 C 525 88, 540 88, 550 88" />
+  <!-- Classify -> SIEM -->
+  <path id="p4" class="flow-line"
+        marker-end="url(#arrow-green)"
+        d="M500 200 C 525 200, 540 200, 550 200" />
+
+  <!-- DATA DOTS (keep your fast cadence) -->
+  <g class="dot-path">
+    <use href="#dot"><animateMotion dur="0.9s" begin="0s"  repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
+    <use href="#dot"><animateMotion dur="0.9s" begin=".15s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
+    <use href="#dot"><animateMotion dur="0.9s" begin=".30s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
+    <use href="#dot"><animateMotion dur="0.9s" begin=".45s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
+
+    <use href="#dot"><animateMotion dur="0.9s" begin="0s"  repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
+    <use href="#dot"><animateMotion dur="0.9s" begin=".15s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
+    <use href="#dot"><animateMotion dur="0.9s" begin=".30s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
+    <use href="#dot"><animateMotion dur="0.9s" begin=".45s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
+  </g>
+</svg>
+  </div>
+
+  <!-- perfectly aligned legend -->
+  <div class="flow-legend">
+    <span>Prompts</span>
+    <span>Protect</span>
+    <span>Activate</span>
+  </div>
+</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partner strip -->
+  <section class="relative border-y border-slate-200 bg-white/70">
+    <div class="mx-auto max-w-5xl px-4 py-10">
+      <p class="mb-6 text-center font-semibold text-sm text-slate-500">Connects with your AI &amp; data stack</p>
+
+      <div class="logo-marquee" aria-label="Logo carousel" role="region">
+        <div class="logo-fade left"></div>
+        <div class="logo-fade right"></div>
+
+        <!-- Track: ROW A + ROW B (duplicate for seamless loop) -->
+        <ul class="logo-track">
+          <!-- ROW A -->
+          <li class="logo-item"><img src="logos/openai.svg" alt="OpenAI" class="logo-img"><span class="logo-text">OpenAI</span></li>
+          <li class="logo-item"><img src="logos/anthropic.svg" alt="Anthropic" class="logo-img"><span class="logo-text">Anthropic</span></li>
+          <li class="logo-item"><img src="logos/aws.svg" alt="AWS Bedrock" class="logo-img"><span class="logo-text">AWS&nbsp;Bedrock</span></li>
+          <li class="logo-item"><img src="logos/vertexai.svg" alt="Vertex AI" class="logo-img thin"><span class="logo-text">Vertex&nbsp;AI</span></li>
+          <li class="logo-item"><img src="logos/azure.svg" alt="Azure OpenAI" class="logo-img thin"><span class="logo-text">Azure&nbsp;OpenAI</span></li>
+          <li class="logo-item"><img src="logos/ollama.svg" alt="Ollama" class="logo-img"><span class="logo-text">Ollama</span></li>
+          <li class="logo-item"><img src="logos/togetherai.svg" alt="Together AI" class="logo-img"><span class="logo-text">Together&nbsp;AI</span></li>
+          <li class="logo-item"><img src="logos/huggingface.svg" alt="Hugging Face" class="logo-img"><span class="logo-text">Hugging&nbsp;Face</span></li>
+          <li class="logo-item"><img src="logos/cohere.svg" alt="Cohere" class="logo-img"><span class="logo-text">Cohere</span></li>
+          <li class="logo-item"><img src="logos/elasticsearch.svg" alt="Elasticsearch" class="logo-img"><span class="logo-text">Elasticsearch</span></li>
+          <li class="logo-item">
+            <svg class="logo-img" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4b5563" d="M12 2a7 7 0 0 1 7 7v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h1V9a7 7 0 0 1 7-7zm0 3a4 4 0 0 0-4 4v1h8V9a4 4 0 0 0-4-4z"/>
+            </svg>
+            <span class="logo-text">Local&nbsp;LLMs</span>
+          </li>
+
+          <!-- ROW B (duplicate of A for seamless loop) -->
+          <li class="logo-item"><img src="logos/openai.svg" alt="OpenAI" class="logo-img"><span class="logo-text">OpenAI</span></li>
+          <li class="logo-item"><img src="logos/anthropic.svg" alt="Anthropic" class="logo-img"><span class="logo-text">Anthropic</span></li>
+          <li class="logo-item"><img src="logos/aws.svg" alt="AWS Bedrock" class="logo-img"><span class="logo-text">AWS&nbsp;Bedrock</span></li>
+          <li class="logo-item"><img src="logos/vertexai.svg" alt="Vertex AI" class="logo-img thin"><span class="logo-text">Vertex&nbsp;AI</span></li>
+          <li class="logo-item"><img src="logos/azure.svg" alt="Azure OpenAI" class="logo-img thin"><span class="logo-text">Azure&nbsp;OpenAI</span></li>
+          <li class="logo-item"><img src="logos/ollama.svg" alt="Ollama" class="logo-img"><span class="logo-text">Ollama</span></li>
+          <li class="logo-item"><img src="logos/togetherai.svg" alt="Together AI" class="logo-img"><span class="logo-text">Together&nbsp;AI</span></li>
+          <li class="logo-item"><img src="logos/huggingface.svg" alt="Hugging Face" class="logo-img"><span class="logo-text">Hugging&nbsp;Face</span></li>
+          <li class="logo-item"><img src="logos/cohere.svg" alt="Cohere" class="logo-img"><span class="logo-text">Cohere</span></li>
+          <li class="logo-item"><img src="logos/elasticsearch.svg" alt="Elasticsearch" class="logo-img"><span class="logo-text">Elasticsearch</span></li>
+          <li class="logo-item">
+            <svg class="logo-img" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4b5563" d="M12 2a7 7 0 0 1 7 7v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h1V9a7 7 0 0 1 7-7zm0 3a4 4 0 0 0-4 4v1h8V9a4 4 0 0 0-4-4z"/>
+            </svg>
+            <span class="logo-text">Local&nbsp;LLMs</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem / Solution -->
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="grid gap-10 md:grid-cols-2">
+      <div>
+        <h2 class="text-2xl font-semibold">AI is powerful — but unsafe by default.</h2>
+        <p class="mt-4 text-slate-700">Unfiltered AI requests can leak PII, trigger prompt injections, and create compliance risk. Straja sits between your app and any model, inspecting every request and response in real time.</p>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <ul class="space-y-2 text-slate-800">
+          <li>• PII & secrets redaction</li>
+          <li>• Injection & jailbreak detection</li>
+          <li>• Policy enforcement (allow/deny/transform)</li>
+          <li>• Full audit trail — without exfiltrating raw data</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="border-y border-slate-200 bg-slate-100/50">
+    <div class="mx-auto max-w-6xl px-4 py-16">
+      <h2 class="text-center text-2xl font-semibold">A local gateway for safe and observable AI</h2>
+      <div class="mt-10 grid gap-6 md:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 transition hover:shadow-soft">
+          <span class="inline-block rounded-full bg-brand-100 px-2 py-1 text-xs text-brand-800">Step 1</span>
+          <h3 class="mt-2 text-lg font-semibold">Deploy locally</h3>
+          <p class="mt-2 text-slate-700">Drop-in proxy or SDK. Runs fully inside your infrastructure.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 transition hover:shadow-soft">
+          <span class="inline-block rounded-full bg-brand-100 px-2 py-1 text-xs text-brand-800">Step 2</span>
+          <h3 class="mt-2 text-lg font-semibold">Filter & classify</h3>
+          <p class="mt-2 text-slate-700">Built-in detectors for PII, injections, jailbreaks, and policy violations.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 transition hover:shadow-soft">
+          <span class="inline-block rounded-full bg-brand-100 px-2 py-1 text-xs text-brand-800">Step 3</span>
+          <h3 class="mt-2 text-lg font-semibold">Activate events</h3>
+          <p class="mt-2 text-slate-700">Forward structured inference data to logs, SIEM, analytics, and dashboards.</p>
+        </div>
+      </div>
+
+      <!-- Code snippet: sample policy -->
+      <div class="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-slate-900">Example policy (JSON)</p>
+          <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">/policies/llm.json</span>
+        </div>
+        <pre class="mt-3 overflow-auto rounded-xl bg-slate-900 p-4 text-[13px] leading-relaxed text-slate-100"><code>{
+  "name": "default_safety",
+  "match": { "path": "/v1/chat/completions" },
+  "filters": [
+    { "type": "pii_redact", "mode": "mask", "entities": ["email","phone","iban"] },
+    { "type": "prompt_injection", "action": "block" },
+    { "type": "jailbreak", "action": "review" }
+  ],
+  "limits": { "tokens": 4096, "rate_per_min": 60 },
+  "on_violation": { "action": "transform", "template": "Your request was adjusted for safety." },
+  "activate": [
+    { "sink": "stdout" },
+    { "sink": "http", "url": "https://siem.local/ingest/straja" }
+  ]
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pillars -->
+  <section id="pillars" class="mx-auto max-w-6xl px-4 py-16">
+    <h2 class="text-2xl font-semibold">Three core capabilities</h2>
+    <div class="mt-8 grid gap-6 md:grid-cols-3">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <h3 class="text-lg font-semibold">Protect</h3>
+        <p class="mt-2 text-slate-700">Filter sensitive data, stop jailbreaks, and enforce policies locally.</p>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <h3 class="text-lg font-semibold">Observe</h3>
+        <p class="mt-2 text-slate-700">Monitor every inference — visibility without sending raw data.</p>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <h3 class="text-lg font-semibold">Activate</h3>
+        <p class="mt-2 text-slate-700">Turn filtered AI traffic into analytics, audit, and product signals.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Overview -->
+  <section id="architecture" class="border-y border-slate-200 bg-slate-100/50">
+    <div class="mx-auto max-w-6xl px-4 py-16">
+      <h2 class="text-2xl font-semibold">Hybrid and privacy-first by design</h2>
+      <div class="mt-6 grid gap-6 md:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 class="font-semibold">Open infrastructure</h3>
+          <p class="mt-2 text-slate-700">Gateway, SDK, and policy engine are open and auditable.</p>
+          <h3 class="mt-6 font-semibold">Signed classifiers</h3>
+          <p class="mt-2 text-slate-700">Detection bundles are closed, signed, and distributed via license keys.</p>
+          <h3 class="mt-6 font-semibold">Offline operation</h3>
+          <p class="mt-2 text-slate-700">Runs fully offline by default, with optional update channels.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 class="font-semibold">License & updates flow</h3>
+          <ol class="mt-2 list-decimal pl-5 text-slate-700">
+            <li>Register for a free key</li>
+            <li>Download the latest classifier bundle</li>
+            <li>Plug into the gateway; updates are verified and signed</li>
+          </ol>
+          <p class="mt-4 text-xs text-slate-500">Vision: developer-first now, enterprise mirrors later.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Straja -->
+  <section id="why" class="mx-auto max-w-6xl px-4 py-16">
+    <h2 class="text-2xl font-semibold">Transparent, local, and developer-first</h2>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <ul class="space-y-3 text-slate-700">
+        <li>• No vendor lock-in — works with any LLM or vector store</li>
+        <li>• Zero data exfiltration — everything stays inside your environment</li>
+        <li>• Fast to integrate — proxy or SDK, ready in minutes</li>
+        <li>• Scales with you — from local dev to enterprise mirror</li>
+      </ul>
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-700 shadow-card">
+        <p class="font-semibold text-slate-900">Tagline</p>
+        <p class="mt-1">“Protect locally, activate everywhere.”</p>
+        <p class="mt-4 font-semibold text-slate-900">One-liner</p>
+        <p class="mt-1">A local AI gateway that filters, classifies, and activates model traffic in real time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap / Vision -->
+  <section id="roadmap" class="border-y border-slate-200 bg-slate-100/50">
+    <div class="mx-auto max-w-6xl px-4 py-16">
+      <h2 class="text-2xl font-semibold">From protection to activation</h2>
+      <div class="mt-6 grid gap-6 md:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+          <p class="text-sm uppercase tracking-wide text-brand-800">Phase 1</p>
+          <h3 class="mt-1 font-semibold">Gateway & policies</h3>
+          <p class="mt-2 text-slate-700">Drop-in proxy, policy engine, built-in detectors (PII, injections).</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+          <p class="text-sm uppercase tracking-wide text-brand-800">Phase 2</p>
+          <h3 class="mt-1 font-semibold">Activation bus</h3>
+          <p class="mt-2 text-slate-700">Structured events to SIEM, observability, analytics, and product systems.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+          <p class="text-sm uppercase tracking-wide text-brand-800">Phase 3</p>
+          <h3 class="mt-1 font-semibold">Enterprise mirror</h3>
+          <p class="mt-2 text-slate-700">On-prem update mirrors, advanced policy packs, and fleet telemetry.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="mx-auto max-w-3xl px-4 py-16">
+    <h2 class="text-2xl font-semibold">FAQ</h2>
+    <div class="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white shadow-card">
+      <details class="p-6" open>
+        <summary class="cursor-pointer text-slate-900">How is Straja different from a general API gateway?</summary>
+        <p class="mt-3 text-slate-700">It’s purpose-built for AI safety and observability. Policies and classifiers operate on prompts, responses, and embeddings, not just HTTP/JSON.</p>
+      </details>
+      <details class="p-6">
+        <summary class="cursor-pointer text-slate-900">Can I run fully offline?</summary>
+        <p class="mt-3 text-slate-700">Yes. The gateway and policy engine run locally. Classifier bundles are signed and can be updated via offline mirrors.</p>
+      </details>
+      <details class="p-6">
+        <summary class="cursor-pointer text-slate-900">Which models are supported?</summary>
+        <p class="mt-3 text-slate-700">Any HTTP-addressable model (OpenAI, Anthropic, Azure, Vertex, self-hosted via Ollama, vLLM, etc.).</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- Signup -->
+<section id="signup" class="mx-auto max-w-3xl px-4 pb-16">
+  <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-card">
+    <h2 class="text-center text-2xl font-semibold">Get a free license key</h2>
+    <p class="mt-2 text-center text-slate-700">
+      Secure your free Straja license key today. We’ll send it to your inbox
+      as soon as early access opens.
+    </p>
+
+    <form
+      id="waitlistForm"
+      action="/api/send-license" 
+      method="POST"
+      class="mx-auto mt-6 grid gap-3 md:grid-cols-[1fr_auto]"
+      aria-describedby="consentNote"
+    >
+      <label class="sr-only" for="email">Work email</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        required
+        placeholder="you@company.com"
+        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none"
+      />
+      <button
+        type="submit"
+        class="rounded-xl bg-accent-600 px-5 py-3 font-semibold text-white shadow-glow hover:bg-accent-500"
+      >
+        Get a free license key
+      </button>
+
+      <!-- Success / error line -->
+      <p id="formMsg" class="col-span-full text-sm text-slate-600"></p>
+
+      <!-- GDPR note -->
+      <p id="consentNote" class="col-span-full mt-1 text-xs leading-relaxed text-slate-500">
+        By submitting, you agree we may email you <em>one</em> message with your license key when Straja launches and occasional
+        updates about Straja. You can unsubscribe anytime.
+      </p>
+    </form>
+   <!-- 
+    <p class="mt-4 text-center text-xs text-slate-500">
+      We’ll never sell your data. No spam.
+    </p>-->
+  </div>
+</section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white/80">
+    <div class="mx-auto max-w-6xl px-4 py-10">
+      <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <p class="text-sm text-slate-500">© 2025 Straja.ai — Protect locally, activate everywhere.</p>
+        <div class="flex gap-4 text-sm">
+          <a href="#" class="text-slate-600 hover:text-slate-900">About</a>
+          <a href="#" class="text-slate-600 hover:text-slate-900">Docs</a>
+          <a href="#" class="text-slate-600 hover:text-slate-900">GitHub</a>
+          <a href="imprint.html" class="text-slate-600 hover:text-slate-900">Imprint</a>
+          <a href="privacy.html" class="text-slate-600 hover:text-slate-900">Privacy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+<script>
+  const btn = document.getElementById('menuBtn');
+  const menu = document.getElementById('mobileMenu');
+  btn?.addEventListener('click', () => menu.classList.toggle('hidden'));
+
+  const form = document.getElementById('waitlistForm');
+  const msg = document.getElementById('formMsg');
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      msg.textContent = '✅ Thanks! Your free license key will arrive as soon as early access opens.';
+      form.reset();
+    } else {
+      msg.textContent = '❌ Something went wrong. Please try again in a moment.';
+    }
+  });
+</script>
+</body>
+</html>
