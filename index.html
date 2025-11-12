@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <script defer src="https://cloud.umami.is/script.js" data-website-id="ba5951ee-db94-475f-a124-19dcee5ee4f5"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -35,6 +36,11 @@
     }
   </script>
   <style>
+    .font-satoshi {
+      font-family: 'Satoshi', 'Inter', ui-sans-serif, system-ui;
+      letter-spacing: -0.02em;
+      font-weight: 600;
+    }
     html { scroll-behavior: smooth }
     /* Light, warm background blobs updated to brand/accent tints */
     .blob { filter: blur(60px); opacity: .35 }
@@ -184,7 +190,9 @@
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
       <a href="#top" class="flex items-center gap-2">
   <img src="logos/straja-mark.svg" alt="Straja logo" class="h-5 w-5" />
-  <span class="text-lg font-semibold tracking-tight">Straja.ai</span>
+<span class="font-satoshi text-lg font-semibold tracking-tight">
+  Straja<span class="opacity-80 font-normal">.ai</span>
+</span>
 </a>
       <nav class="hidden items-center gap-6 md:flex">
         <a href="#how" class="text-sm font-medium text-slate-600 hover:text-slate-900">How it works</a>
