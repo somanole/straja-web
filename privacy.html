@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,6 +31,11 @@
     }
   </script>
   <style>
+        .font-satoshi {
+      font-family: 'Satoshi', 'Inter', ui-sans-serif, system-ui;
+      letter-spacing: -0.02em;
+      font-weight: 600;
+    }
     :root{
       --protect:#0D825B;
       --protect-700:#0A6A4A;
@@ -58,8 +64,10 @@
 <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
   <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
     <a href="index.html#top" class="flex items-center gap-2">
-      <img src="logos/straja-mark.svg" alt="" class="h-5 w-5" />
-      <span class="text-lg font-semibold tracking-tight">Straja.ai</span>
+      <img src="logos/straja-mark.svg" alt="" class="h-6 w-6" />
+      <span class="font-satoshi text-xl font-semibold tracking-tight">
+  Straja<span class="opacity-80 font-normal">.ai</span>
+</span>
     </a>
     <nav class="hidden items-center gap-6 md:flex">
       <a href="index.html#how" class="font-medium text-sm text-slate-600 hover:text-slate-900">How it works</a>
