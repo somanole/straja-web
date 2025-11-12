@@ -19,14 +19,14 @@ export default async function handler(req, res) {
 
     // Send the email
     const data = await resend.emails.send({
-      from: 'Straja <hello@straja.ai>',
+      from: 'Straja.ai <hello@straja.ai>',
       to: email,
-      subject: 'Your free Straja license key',
+      subject: 'Welcome to Straja.ai — your license key is on the way',
       html: `
         <p>Hi there,</p>
-        <p>Thanks for your interest in <strong>Straja.ai</strong>.</p>
-        <p>You’re now on the list and will receive your license key when we launch. Stay tuned!</p>
-        <p>– The Straja team</p>
+        <p>Thanks for joining <strong>Straja.ai</strong>.</p>
+        <p>You’re now confirmed for early access. We’ll send your free license key as soon as the gateway launches.</p>
+        <p>– Sorin from the Straja.ai team</p>
       `
     });
 
