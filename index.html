@@ -51,6 +51,19 @@
 
   <!-- Carousel styles (unchanged behavior, colors matched to light bg) -->
   <style>
+/* Large screens: scale up the diagram a bit */
+@media (min-width: 1200px) {
+  .diagram-scale {
+    transform: scale(1.05);
+  }
+}
+
+/* Tablets / mobile: no scaling, just responsive width */
+@media (max-width: 1199px) {
+  .diagram-scale {
+    transform: scale(1);
+  }
+}
     /* Carousel viewport */
     .logo-marquee {
       position: relative;
@@ -145,7 +158,7 @@
   /* Legend styling under flow diagram */
 .flow-legend {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   text-align: center;
   gap: 1rem;
@@ -166,6 +179,7 @@
 /* Bigger, clearer labels inside the diagram */
 .flow-title { font: 600 16px/20px Inter, ui-sans-serif, system-ui; fill: #0F172A; }
 .flow-sub   { font: 500 13px/18px Inter, ui-sans-serif, system-ui; fill: #64748B; }
+.flow-sub-lg   { font: 500 15px/20px Inter, ui-sans-serif, system-ui; fill: #64748B; }
 
 /* Slightly thicker node border so larger boxes feel crisp */
 .flow-node {
@@ -270,133 +284,181 @@
           <p class="mt-4 text-xs text-slate-500">Free, local, open-source, developer-first. No data leaves your infra.</p>
         </div>
         <div class="relative">
-          <div class="flow-card">
+<div class="diagram-scale">
+<div class="flow-card">
   <div class="flow-inner">
-    <svg viewBox="0 0 800 260" class="w-full overflow-visible mx-auto block" aria-hidden="true">
-  <defs>
-    <linearGradient id="g-flow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"  stop-color="var(--protect)"/>
-      <stop offset="100%" stop-color="var(--activate)"/>
-    </linearGradient>
-    <symbol id="dot"><circle r="4.5" fill="var(--activate)"/></symbol>
-<symbol id="prompt-dot">
-  <circle r="5.0" fill="var(--protect)"/>
-  <!-- Optional tiny halo:
-  <circle r="6.5" fill="var(--protect)" opacity=".12"/>
-  -->
-</symbol>
-  </defs>
+<svg viewBox="50 10 700 260" class="w-full overflow-visible mx-auto block" aria-hidden="true">
+      <defs>
+        <linearGradient id="g-flow" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"  stop-color="var(--protect)" />
+          <stop offset="100%" stop-color="var(--activate)" />
+        </linearGradient>
 
-  <!-- NODES (bigger) -->
-  <!-- Your App -->
-  <!-- box: 180×76 at (40,96) | center x=130 -->
-  <rect class="flow-node" x="40" y="96" rx="14" ry="14" width="180" height="76"/>
-  <text class="flow-title" x="130" y="126" text-anchor="middle">Your App</text>
-  <text class="flow-sub"   x="130" y="146" text-anchor="middle">SDK / Proxy</text>
+        <!-- traffic dots -->
+        <symbol id="dot-out">
+          <circle r="4.5" fill="var(--protect)" />
+        </symbol>
+        <symbol id="dot-in">
+          <circle r="4.5" fill="var(--activate)" />
+        </symbol>
+        <!-- activation dots -->
+        <symbol id="dot-evt">
+          <circle r="4" fill="var(--activate-bright)" />
+        </symbol>
+      </defs>
 
-  <!-- Straja – Filter -->
-  <!-- box: 220×72 at (280,52) | center x=390 -->
-  <rect class="flow-node" x="280" y="52" rx="14" ry="14" width="220" height="72"/>
-  <text class="flow-title" x="390" y="82"  text-anchor="middle">Straja – Filter</text>
-  <text class="flow-sub"   x="390" y="100" text-anchor="middle">PII / Injection / Toxicity</text>
-
-  <!-- Straja – Classify -->
-  <!-- box: 220×72 at (280,164) | center x=390 -->
-  <rect class="flow-node" x="280" y="164" rx="14" ry="14" width="220" height="72"/>
-  <text class="flow-title" x="390" y="194" text-anchor="middle">Straja – Guardrails</text>
-  <text class="flow-sub"   x="390" y="212" text-anchor="middle">Classify / Labels / Scores</text>
-
-  <!-- LLM -->
-  <!-- box: 170×68 at (550,52) | center x=635 -->
-  <rect class="flow-node" x="550" y="52" rx="14" ry="14" width="210" height="72"/>
-<text class="flow-title" x="660" y="82"  text-anchor="middle">LLM</text>
-<text class="flow-sub"   x="660" y="100" text-anchor="middle">Any provider</text>
-
-  <!-- SIEM / Analytics -->
-  <!-- box: 210×72 at (550,164) | center x=655 -->
-  <rect class="flow-node" x="550" y="164" rx="14" ry="14" width="210" height="72"/>
-  <text class="flow-title" x="655" y="194" text-anchor="middle">SIEM / Analytics</text>
-  <text class="flow-sub"   x="655" y="212" text-anchor="middle">Events / Metrics</text>
-
-  <!-- FLOWS (re-anchored to new box edges) -->
-<!-- Invisible rails: keep the geometry, hide the stroke -->
-<path id="pL1" d="M180 130 C 215 130, 240 110, 270 88"
+      <!-- LEFT RAIL: OBSERVE / PROTECT / GUARDRAILS / ACTIVATE -->
+      <rect x="6" y="18" width="150" height="224" rx="18" ry="18"
       fill="none" stroke="none" />
+      <!-- vertical separator -->
+      <line x1="160" y1="24" x2="160" y2="236"
+            stroke="var(--line)" stroke-width="1.1" />
 
-<path id="pL2" d="M180 130 C 215 130, 240 150, 270 172"
-      fill="none" stroke="none" />
+      <!-- upper stack -->
+      <text x="55" y="55"  class="flow-sub-lg" text-anchor="start">Observe</text>
+      <text x="55" y="77"  class="flow-sub-lg" text-anchor="start">Protect</text>
+      <text x="55" y="99" class="flow-sub-lg" text-anchor="start">Guardrails</text>
 
-      <!-- ADD THIS HERE -->
-<!-- Moving prompts (green) from App → Filter / Classify -->
-<g class="left-packets">
-  <!-- Into Filter -->
-  <use href="#prompt-dot">
-    <animateMotion dur="1.35s" begin="0s" repeatCount="indefinite" rotate="auto">
-      <mpath xlink:href="#pL1"/>
-    </animateMotion>
-  </use>
-  <use href="#prompt-dot">
-    <animateMotion dur="1.35s" begin=".22s" repeatCount="indefinite" rotate="auto">
-      <mpath xlink:href="#pL1"/>
-    </animateMotion>
-  </use>
-  <use href="#prompt-dot">
-    <animateMotion dur="1.35s" begin=".44s" repeatCount="indefinite" rotate="auto">
-      <mpath xlink:href="#pL1"/>
-    </animateMotion>
-  </use>
+      <!-- dashed divider -->
+      <line x1="35" y1="140" x2="145" y2="140"
+            stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4" />
 
-  <!-- Into Classify -->
-  <use href="#prompt-dot">
-    <animateMotion dur="1.45s" begin="0s" repeatCount="indefinite" rotate="auto">
-      <mpath xlink:href="#pL2"/>
-    </animateMotion>
-  </use>
-  <use href="#prompt-dot">
-    <animateMotion dur="1.45s" begin=".24s" repeatCount="indefinite" rotate="auto">
-      <mpath xlink:href="#pL2"/>
-    </animateMotion>
-  </use>
-  <use href="#prompt-dot">
-    <animateMotion dur="1.45s" begin=".48s" repeatCount="indefinite" rotate="auto">
-      <mpath xlink:href="#pL2"/>
-    </animateMotion>
-  </use>
-</g>
+      <!-- activate label -->
+      <text x="55" y="210" class="flow-sub-lg" text-anchor="start">Activate</text>
 
-  <!-- Filter -> LLM -->
-  <path id="p3" class="flow-line"
-        marker-end="url(#arrow-green)"
-        d="M500 88 C 525 88, 540 88, 550 88" />
-  <!-- Classify -> SIEM -->
-  <path id="p4" class="flow-line"
-        marker-end="url(#arrow-green)"
-        d="M500 200 C 525 200, 540 200, 550 200" />
+      <!-- MAIN NODES ---------------------------------------------------->
 
-  <!-- DATA DOTS (keep your fast cadence) -->
-  <g class="dot-path">
-    <use href="#dot"><animateMotion dur="0.9s" begin="0s"  repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
-    <use href="#dot"><animateMotion dur="0.9s" begin=".15s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
-    <use href="#dot"><animateMotion dur="0.9s" begin=".30s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
-    <use href="#dot"><animateMotion dur="0.9s" begin=".45s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p3"/></animateMotion></use>
+      <!-- App -->
+      <rect class="flow-node" x="210" y="40" rx="12" ry="12" width="130" height="64" />
+      <text class="flow-title" x="275" y="70" text-anchor="middle">App</text>
+      <text class="flow-sub"   x="275" y="90" text-anchor="middle">Backend / UI</text>
 
-    <use href="#dot"><animateMotion dur="0.9s" begin="0s"  repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
-    <use href="#dot"><animateMotion dur="0.9s" begin=".15s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
-    <use href="#dot"><animateMotion dur="0.9s" begin=".30s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
-    <use href="#dot"><animateMotion dur="0.9s" begin=".45s" repeatCount="indefinite" rotate="auto"><mpath xlink:href="#p4"/></animateMotion></use>
-  </g>
-</svg>
-  </div>
+      <!-- Straja -->
+      <rect class="flow-node" x="390" y="26" rx="14" ry="14" width="170" height="100" />
+      <text class="flow-title" x="475" y="58" text-anchor="middle">Straja Gateway</text>
+      <text class="flow-sub"   x="475" y="78" text-anchor="middle">Filter PII &amp; secrets</text>
+      <text class="flow-sub"   x="475" y="96" text-anchor="middle">Injections &amp; jailbreaks</text>
+      <text class="flow-sub"   x="475" y="114" text-anchor="middle">Guardrails &amp; policies</text>
 
-  <!-- perfectly aligned legend -->
-  <div class="flow-legend">
-    <span>Prompts</span>
-    <span>Protect</span>
-    <span>Activate</span>
+      <!-- LLM -->
+      <rect class="flow-node" x="610" y="40" rx="12" ry="12" width="130" height="64" />
+      <text class="flow-title" x="675" y="70" text-anchor="middle">LLM</text>
+      <text class="flow-sub"   x="675" y="90" text-anchor="middle">Any provider</text>
+
+      <!-- SIEM / Logs -->
+      <rect class="flow-node" x="390" y="182" rx="12" ry="12" width="170" height="60" />
+      <text class="flow-title" x="475" y="210" text-anchor="middle">SIEM / Analytics</text>
+      <text class="flow-sub"   x="475" y="228" text-anchor="middle">Events, metrics, audit</text>
+
+            <!-- LINES (visible) ---------------------------------------------->
+
+      <!-- App ↔ Straja (center at y = 72, edges 340 ↔ 390) -->
+      <path d="M340 72 L390 72"
+            fill="none" stroke="url(#g-flow)" stroke-width="3" stroke-linecap="round" opacity="0.65" />
+      <path d="M390 84 L340 84"
+            fill="none" stroke="url(#g-flow)" stroke-width="3" stroke-linecap="round" opacity="0.35" />
+
+      <!-- Straja ↔ LLM (center at y = 72, edges 560 ↔ 610) -->
+      <path d="M560 72 L610 72"
+            fill="none" stroke="url(#g-flow)" stroke-width="3" stroke-linecap="round" opacity="0.65" />
+      <path d="M610 84 L560 84"
+            fill="none" stroke="url(#g-flow)" stroke-width="3" stroke-linecap="round" opacity="0.35" />
+
+      <!-- Straja → SIEM (vertical, bottom of Straja to top of SIEM) -->
+      <path id="p-evt" d="M475 126 L475 182"
+            fill="none" stroke="url(#g-flow)" stroke-width="3" stroke-linecap="round" opacity="0.9" />
+
+      <!-- INVISIBLE PATHS FOR ANIMATION -------------------------------->
+
+      <!-- App → Straja -->
+      <path id="p-app-straja" d="M340 72 L390 72"
+            fill="none" stroke="none" />
+      <!-- Straja → App -->
+      <path id="p-straja-app" d="M390 84 L340 84"
+            fill="none" stroke="none" />
+
+      <!-- Straja → LLM -->
+      <path id="p-straja-llm" d="M560 72 L610 72"
+            fill="none" stroke="none" />
+      <!-- LLM → Straja -->
+      <path id="p-llm-straja" d="M610 84 L560 84"
+            fill="none" stroke="none" />
+
+      <!-- ANIMATED TRAFFIC DOTS ---------------------------------------->
+
+      <!-- App → Straja (outgoing prompts) -->
+      <g class="dot-path">
+        <use href="#dot-out">
+          <animateMotion dur="1.0s" begin="0s" repeatCount="indefinite">
+            <mpath xlink:href="#p-app-straja" />
+          </animateMotion>
+        </use>
+        <use href="#dot-out">
+          <animateMotion dur="1.0s" begin=".25s" repeatCount="indefinite">
+            <mpath xlink:href="#p-app-straja" />
+          </animateMotion>
+        </use>
+      </g>
+
+      <!-- Straja → App (guarded responses) -->
+      <g class="dot-path">
+        <use href="#dot-in">
+          <animateMotion dur="1.0s" begin="0s" repeatCount="indefinite">
+            <mpath xlink:href="#p-straja-app" />
+          </animateMotion>
+        </use>
+        <use href="#dot-in">
+          <animateMotion dur="1.0s" begin=".25s" repeatCount="indefinite">
+            <mpath xlink:href="#p-straja-app" />
+          </animateMotion>
+        </use>
+      </g>
+
+      <!-- Straja → LLM (sanitized prompts) -->
+      <g class="dot-path">
+        <use href="#dot-out">
+          <animateMotion dur="0.9s" begin="0s" repeatCount="indefinite">
+            <mpath xlink:href="#p-straja-llm" />
+          </animateMotion>
+        </use>
+        <use href="#dot-out">
+          <animateMotion dur="0.9s" begin=".2s" repeatCount="indefinite">
+            <mpath xlink:href="#p-straja-llm" />
+          </animateMotion>
+        </use>
+      </g>
+
+      <!-- LLM → Straja (model responses back) -->
+      <g class="dot-path">
+        <use href="#dot-in">
+          <animateMotion dur="0.9s" begin="0s" repeatCount="indefinite">
+            <mpath xlink:href="#p-llm-straja" />
+          </animateMotion>
+        </use>
+        <use href="#dot-in">
+          <animateMotion dur="0.9s" begin=".2s" repeatCount="indefinite">
+            <mpath xlink:href="#p-llm-straja" />
+          </animateMotion>
+        </use>
+      </g>
+
+      <!-- EVENTS: Straja → SIEM / Logs -->
+      <g class="dot-path">
+        <use href="#dot-evt">
+          <animateMotion dur="1.0s" begin="0s" repeatCount="indefinite">
+            <mpath xlink:href="#p-evt" />
+          </animateMotion>
+        </use>
+        <use href="#dot-evt">
+          <animateMotion dur="1.0s" begin=".35s" repeatCount="indefinite">
+            <mpath xlink:href="#p-evt" />
+          </animateMotion>
+        </use>
+      </g>
+    </svg>
   </div>
 </div>
-        </div>
-      </div>
+</div>
     </div>
   </section>
 
