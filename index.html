@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="ba5951ee-db94-475f-a124-19dcee5ee4f5"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -1025,6 +1026,15 @@
     Get a free license key
   </button>
 
+  <!-- Turnstile anti-bot widget -->
+  <div class="col-span-full mt-2">
+    <div
+      class="cf-turnstile"
+      data-sitekey="0x4AAAAAACB_O4HNYctD6nyL"
+      data-theme="light"
+    ></div>
+  </div>
+
   <!-- Success / error line -->
   <div id="formMsg" class="col-span-full hidden flex items-center gap-2 rounded-md border border-green-500 bg-green-50 px-4 py-2 text-sm text-green-800 shadow-sm">
   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-600" viewBox="0 0 20 20" fill="currentColor">
@@ -1066,6 +1076,18 @@
     e.preventDefault();
     const email = document.getElementById('email').value;
 
+    // 🔐 Get Turnstile token from the hidden input
+    const tokenInput = document.querySelector('input[name="cf-turnstile-response"]');
+    const turnstileToken = tokenInput ? tokenInput.value : '';
+
+    // If for some reason there is no token, stop here
+    if (!turnstileToken) {
+      msg.classList.remove('hidden');
+      msg.querySelector('span').textContent = 'Please complete the verification.';
+      setTimeout(() => msg.classList.add('hidden'), 5000);
+      return;
+    }
+
     msg.classList.remove('hidden');
     msg.querySelector('span').textContent = 'Sending…';
 
@@ -1073,7 +1095,7 @@
       const res = await fetch('/api/send-license', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email, turnstileToken }) // ⬅️ send token too
       });
 
       const data = await res.json();
@@ -1081,8 +1103,13 @@
       if (res.ok) {
         msg.querySelector('span').textContent = 'License key sent! Check your inbox.';
         form.reset();
+
+        // optional: reset Turnstile widget after success
+        if (typeof turnstile !== 'undefined') {
+          turnstile.reset();
+        }
       } else {
-        msg.querySelector('span').textContent = 'Something went wrong.';
+        msg.querySelector('span').textContent = data.error || 'Something went wrong.';
       }
     } catch (err) {
       msg.querySelector('span').textContent = 'Something went wrong.';
