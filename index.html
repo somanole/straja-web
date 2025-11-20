@@ -1005,50 +1005,52 @@
       Secure your free Straja license key today. We’ll send it to your inbox
       as soon as early access opens.
     </p>
-<form
-  id="waitlistForm"
-  class="mx-auto mt-6 grid gap-3 md:grid-cols-[1fr_auto]"
-  aria-describedby="consentNote"
->
-  <label class="sr-only" for="email">Work email</label>
-  <input
-    id="email"
-    name="email"
-    type="email"
-    required
-    placeholder="you@company.com"
-    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none"
-  />
-  <button
-    type="submit"
-    class="rounded-xl bg-accent-600 px-5 py-3 font-semibold text-white shadow-glow hover:bg-accent-500"
-  >
-    Get a free license key
-  </button>
 
-  <!-- Turnstile anti-bot widget -->
-  <div class="col-span-full mt-2">
-    <div
-      class="cf-turnstile"
-      data-sitekey="0x4AAAAAACB_O4HNYctD6nyL"
-      data-theme="light"
-    ></div>
-  </div>
+    <form
+      id="waitlistForm"
+      class="mx-auto mt-6 grid gap-3 md:grid-cols-[1fr_auto]"
+      aria-describedby="consentNote"
+    >
+      <label class="sr-only" for="email">Work email</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        required
+        placeholder="you@company.com"
+        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none"
+      />
 
-  <!-- Success / error line -->
-  <div id="formMsg" class="col-span-full hidden flex items-center gap-2 rounded-md border border-green-500 bg-green-50 px-4 py-2 text-sm text-green-800 shadow-sm">
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 111.414-1.414L8.414 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-  </svg>
-  <span>License key sent! Check your inbox.</span>
-</div>
+      <button
+        type="submit"
+        class="rounded-xl bg-accent-600 px-5 py-3 font-semibold text-white shadow-glow hover:bg-accent-500"
+      >
+        Get a free license key
+      </button>
 
-  <!-- GDPR note -->
-  <p id="consentNote" class="col-span-full mt-1 text-xs leading-relaxed text-slate-500">
-    By submitting, you agree we may email you <em>one</em> message with your license key when Straja launches and occasional
-    updates about Straja. You can unsubscribe anytime.
-  </p>
-</form>
+      <!-- Turnstile anti-bot widget (initially hidden, rendered on submit) -->
+      <div id="turnstile-container" class="col-span-full mt-2 hidden"></div>
+
+      <!-- Success / error line -->
+      <div
+        id="formMsg"
+        class="col-span-full hidden flex items-center gap-2 rounded-md border border-green-500 bg-green-50 px-4 py-2 text-sm text-green-800 shadow-sm"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 111.414-1.414L8.414 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        <span>License key sent! Check your inbox.</span>
+      </div>
+
+      <!-- GDPR note -->
+      <p
+        id="consentNote"
+        class="col-span-full mt-1 text-xs leading-relaxed text-slate-500"
+      >
+        By submitting, you agree we may email you <em>one</em> message with your license key when Straja launches and occasional
+        updates about Straja. You can unsubscribe anytime.
+      </p>
+    </form>
   </div>
 </section>
 
@@ -1071,22 +1073,17 @@
 <script>
   const form = document.getElementById('waitlistForm');
   const msg = document.getElementById('formMsg');
+  const turnstileContainer = document.getElementById('turnstile-container');
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
+  const TURNSTILE_SITEKEY = '0x4AAAAAACB_O4HNYctD6nyL';
 
-    // 🔐 Get Turnstile token from the hidden input
-    const tokenInput = document.querySelector('input[name="cf-turnstile-response"]');
-    const turnstileToken = tokenInput ? tokenInput.value : '';
+  let turnstileWidgetId = null;
+  let turnstileToken = null;
+  let isSubmitting = false;
 
-    // If for some reason there is no token, stop here
-    if (!turnstileToken) {
-      msg.classList.remove('hidden');
-      msg.querySelector('span').textContent = 'Please complete the verification.';
-      setTimeout(() => msg.classList.add('hidden'), 5000);
-      return;
-    }
+  async function submitForm(email) {
+    if (isSubmitting) return;
+    isSubmitting = true;
 
     msg.classList.remove('hidden');
     msg.querySelector('span').textContent = 'Sending…';
@@ -1095,30 +1092,77 @@
       const res = await fetch('/api/send-license', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, turnstileToken }) // ⬅️ send token too
+        body: JSON.stringify({ email, turnstileToken })
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        msg.querySelector('span').textContent = 'License key sent! Check your inbox.';
+        msg.querySelector('span').textContent =
+          'License key sent! Check your inbox.';
         form.reset();
-
-        // optional: reset Turnstile widget after success
-        if (typeof turnstile !== 'undefined') {
-          turnstile.reset();
-        }
       } else {
-        msg.querySelector('span').textContent = data.error || 'Something went wrong.';
+        msg.querySelector('span').textContent =
+          data.error || 'Something went wrong.';
       }
     } catch (err) {
+      console.error(err);
       msg.querySelector('span').textContent = 'Something went wrong.';
     }
 
-    // Optional: auto-hide message
-    setTimeout(() => msg.classList.add('hidden'), 5000);
+    // Hide message + Turnstile after 5s
+    setTimeout(() => {
+      msg.classList.add('hidden');
+
+      // remove widget + token so the next submission starts clean
+      if (turnstileContainer) {
+        turnstileContainer.classList.add('hidden');
+        turnstileContainer.innerHTML = '';
+      }
+      turnstileToken = null;
+      turnstileWidgetId = null;
+    }, 5000);
+
+    isSubmitting = false;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    if (!email) return;
+
+    // If we already have a valid token, just submit
+    if (turnstileToken) {
+      submitForm(email);
+      return;
+    }
+
+    // Otherwise, show + render Turnstile and wait for the callback
+    if (turnstileContainer) {
+      turnstileContainer.classList.remove('hidden');
+    }
+
+    if (!turnstileWidgetId && typeof turnstile !== 'undefined') {
+      turnstileWidgetId = turnstile.render('#turnstile-container', {
+        sitekey: TURNSTILE_SITEKEY,
+        theme: 'light',
+        callback: function (token) {
+          // Called when the user passes the challenge
+          turnstileToken = token;
+          const currentEmail = document.getElementById('email').value.trim();
+          if (currentEmail) {
+            submitForm(currentEmail);
+          }
+        }
+      });
+    }
+
+    // Optional: message while we wait for the challenge
+    msg.classList.remove('hidden');
+    msg.querySelector('span').textContent = 'Please complete the verification.';
   });
 </script>
+
 <script>
   const menuBtn = document.getElementById('menuBtn');
   const mobileMenu = document.getElementById('mobileMenu');
