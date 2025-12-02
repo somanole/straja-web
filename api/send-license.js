@@ -2,6 +2,11 @@
 
 import { Resend } from 'resend';
 import { Pool } from 'pg';
+import {
+  ensureLicensesTable,
+  generateLicenseKey,
+  LICENSE_TIER,
+} from './_lib/license.js';
 
 // Re-use a single pool between invocations
 const pool = new Pool({
@@ -65,15 +70,32 @@ export default async function handler(req, res) {
       // Continue anyway
     }
 
-    // ---------- 2) Send the email via Resend ----------
+    // ---------- 2) Generate license and store it ----------
+    const { licenseKey, jti } = generateLicenseKey(email);
+
+    try {
+      await ensureLicensesTable(pool);
+      await pool.query(
+        `INSERT INTO licenses (id, email, license_key, tier, status, jti)
+         VALUES ($1, $2, $3, $4, 'active', $5)`,
+        [jti, email, licenseKey, LICENSE_TIER, jti]
+      );
+    } catch (dbError) {
+      console.error('Error saving license to Postgres:', dbError);
+      return res.status(500).json({ error: 'Failed to store license' });
+    }
+
+    // ---------- 3) Send the email via Resend ----------
     const data = await resend.emails.send({
       from: 'Straja.ai <hello@straja.ai>',
       to: email,
-      subject: 'Welcome to Straja.ai — your license key is on the way',
+      subject: 'Your Straja.ai free license key',
       html: `
         <p>Hi there,</p>
         <p>Thanks for joining <strong>Straja.ai</strong>.</p>
-        <p>You’re now confirmed for early access. We’ll send your free license key as soon as the gateway launches.</p>
+        <p>Your Straja free license key:</p>
+        <p><strong>${licenseKey}</strong></p>
+        <p>Keep this safe&mdash;you'll need it when the gateway launches.</p>
         <p>– Sorin from the Straja.ai team</p>
       `,
     });
