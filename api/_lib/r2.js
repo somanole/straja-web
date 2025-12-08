@@ -16,6 +16,11 @@ const makeClient = (forcePathStyle) => {
   }
 
   const url = new URL(endpoint);
+  // If endpoint already carries the bucket in the path, strip it to avoid double-including
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  if (pathParts.length > 0 && pathParts[pathParts.length - 1] === bucket) {
+    url.pathname = `/${pathParts.slice(0, -1).join('/')}`;
+  }
 
   const cacheKey = `${forcePathStyle ? 'path' : 'virtual'}|${url.toString()}`;
   if (clients.has(cacheKey)) return clients.get(cacheKey);
