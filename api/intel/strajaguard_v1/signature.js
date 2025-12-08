@@ -1,9 +1,7 @@
-import {
-  BUNDLE_MODEL_KEY,
-  getLatestBundleVersion,
-} from '../../_lib/bundle-config.js';
+import { BUNDLE_MODEL_KEY } from '../../_lib/bundle-config.js';
 import { requireBundleAuthorization } from '../../_lib/bundle-auth.js';
 import { fetchR2Object } from '../../_lib/r2.js';
+import { getLatestBundleVersion } from '../../_lib/version.js';
 
 const extractVersion = (req) => {
   const versionParam = req.query?.version;
@@ -23,7 +21,8 @@ export default async function handler(req, res) {
   const tokenPayload = requireBundleAuthorization(req, res);
   if (!tokenPayload) return;
 
-  let version = extractVersion(req) || tokenPayload.version || getLatestBundleVersion();
+  const latestVersion = await getLatestBundleVersion();
+  let version = extractVersion(req) || tokenPayload.version || latestVersion;
   if (!isValidVersion(version)) {
     return res.status(400).json({ error: 'Missing or invalid version' });
   }

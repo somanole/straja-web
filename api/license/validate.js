@@ -11,10 +11,10 @@ import {
   buildBaseUrl,
   computeLicenseValidUntil,
   getEntitlementsForTier,
-  getLatestBundleVersion,
   hasEntitlement,
 } from '../_lib/bundle-config.js';
 import { issueBundleToken } from '../_lib/bundle-token.js';
+import { getLatestBundleVersion } from '../_lib/version.js';
 
 // Re-use a single pool between invocations
 const pool = new Pool({
@@ -108,7 +108,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const latestVersion = getLatestBundleVersion();
+    const latestVersion = await getLatestBundleVersion();
     const clientBundleInfo = body?.bundles?.[BUNDLE_MODEL_KEY];
     const currentVersion =
       clientBundleInfo && typeof clientBundleInfo.current_version === 'string'

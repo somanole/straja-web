@@ -1,8 +1,5 @@
-import { URL } from 'url';
-
 export const BUNDLE_MODEL_KEY = 'strajaguard_v1';
 
-const FALLBACK_LATEST_VERSION = '20251208-2100';
 const LICENSE_VALIDITY_DAYS = parseInt(
   process.env.LICENSE_VALIDITY_DAYS || '365',
   10
@@ -20,11 +17,6 @@ const tierEntitlements = {
   free: [BUNDLE_MODEL_KEY],
   pro: [BUNDLE_MODEL_KEY],
   enterprise: [BUNDLE_MODEL_KEY],
-};
-
-export const getLatestBundleVersion = () => {
-  const configured = process.env.STRAJAGUARD_V1_LATEST_VERSION;
-  return configured || FALLBACK_LATEST_VERSION;
 };
 
 export const getEntitlementsForTier = (tier) =>

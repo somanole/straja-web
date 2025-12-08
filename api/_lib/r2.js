@@ -48,10 +48,11 @@ const signGetRequest = (key) => {
   const { accessKeyId, secretAccessKey, endpoint, bucket } =
     getAwsCredentials();
 
-  const url = new URL(endpoint);
+  const baseUrl = new URL(endpoint);
+  const hostWithBucket = `${bucket}.${baseUrl.host}`;
   const encodedPath = encodePath(key);
-  const path = `/${bucket}/${encodedPath}`;
-  url.pathname = path;
+  const path = `/${encodedPath}`;
+  const url = new URL(`${baseUrl.protocol}//${hostWithBucket}${path}`);
 
   const now = new Date();
   const amzDate = toAmzDate(now);
