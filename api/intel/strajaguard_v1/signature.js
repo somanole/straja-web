@@ -21,7 +21,13 @@ export default async function handler(req, res) {
   const tokenPayload = requireBundleAuthorization(req, res);
   if (!tokenPayload) return;
 
-  const latestVersion = await getLatestBundleVersion();
+  let latestVersion;
+  try {
+    latestVersion = await getLatestBundleVersion();
+  } catch (error) {
+    console.error('Failed to resolve latest version:', error);
+    return res.status(503).json({ error: 'Latest bundle version unavailable' });
+  }
   let version = extractVersion(req) || tokenPayload.version || latestVersion;
   if (!isValidVersion(version)) {
     return res.status(400).json({ error: 'Missing or invalid version' });

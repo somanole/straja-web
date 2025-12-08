@@ -1,7 +1,6 @@
 import { BUNDLE_MODEL_KEY } from './bundle-config.js';
 import { fetchR2Object, listR2Prefixes } from './r2.js';
 
-const FALLBACK_LATEST_VERSION = '20251208-2100';
 const cacheTtlMs = 60 * 1000;
 
 let cachedVersion = null;
@@ -20,11 +19,6 @@ const parseLatestFromManifest = (buffer) => {
 };
 
 export const getLatestBundleVersion = async () => {
-  // Env override always wins
-  if (process.env.STRAJAGUARD_V1_LATEST_VERSION) {
-    return process.env.STRAJAGUARD_V1_LATEST_VERSION;
-  }
-
   // Use a short cache to avoid hammering R2
   if (cachedVersion && Date.now() - cachedAt < cacheTtlMs) {
     return cachedVersion;
@@ -63,6 +57,5 @@ export const getLatestBundleVersion = async () => {
     console.error('Failed to list versions from R2:', error?.message || error);
   }
 
-  // Fallback to baked-in default
-  return FALLBACK_LATEST_VERSION;
+  throw new Error('Unable to resolve latest bundle version from R2');
 };
