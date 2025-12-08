@@ -20,7 +20,11 @@ const getClient = () => {
   client = new S3Client({
     region: 'auto',
     endpoint,
-    forcePathStyle: process.env.R2_ADDRESSING_STYLE === 'path',
+    // R2 often prefers path-style; allow env override but default to true
+    forcePathStyle:
+      process.env.R2_ADDRESSING_STYLE === 'virtual'
+        ? false
+        : true,
     credentials: {
       accessKeyId,
       secretAccessKey,
