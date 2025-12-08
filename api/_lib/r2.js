@@ -1,9 +1,11 @@
 import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getMaxBundleBytes } from './bundle-config.js';
 
-const clients = new Map();
+let client;
 
-const makeClient = (forcePathStyle) => {
+const getClient = () => {
+  if (client) return client;
+
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
   const endpoint = process.env.R2_ENDPOINT_URL;
@@ -15,27 +17,18 @@ const makeClient = (forcePathStyle) => {
     );
   }
 
+  // Cloudflare R2 recommends path-style with account endpoint: https://<accountid>.r2.cloudflarestorage.com
   const url = new URL(endpoint);
-  // If endpoint already carries the bucket in the path, strip it to avoid double-including
-  const pathParts = url.pathname.split('/').filter(Boolean);
-  if (pathParts.length > 0 && pathParts[pathParts.length - 1] === bucket) {
-    url.pathname = `/${pathParts.slice(0, -1).join('/')}`;
-  }
-
-  const cacheKey = `${forcePathStyle ? 'path' : 'virtual'}|${url.toString()}`;
-  if (clients.has(cacheKey)) return clients.get(cacheKey);
-
-  const client = new S3Client({
+  client = new S3Client({
     region: 'auto',
     endpoint: url.toString(),
-    forcePathStyle,
+    forcePathStyle: true,
     credentials: {
       accessKeyId,
       secretAccessKey,
     },
   });
 
-  clients.set(cacheKey, client);
   return client;
 };
 
@@ -58,84 +51,65 @@ const streamToBuffer = async (stream, maxBytes) => {
 };
 
 export const fetchR2Object = async (key) => {
+  const s3 = getClient();
   const maxBytes = getMaxBundleBytes();
 
-  const styles =
-    process.env.R2_ADDRESSING_STYLE === 'virtual'
-      ? [false]
-      : process.env.R2_ADDRESSING_STYLE === 'path'
-      ? [true]
-      : [true, false]; // try path then virtual
+  try {
+    const response = await s3.send(
+      new GetObjectCommand({
+        Bucket: process.env.R2_BUCKET,
+        Key: key,
+      })
+    );
 
-  let lastError;
-  for (const forcePathStyle of styles) {
-    try {
-      const s3 = makeClient(forcePathStyle);
-      const response = await s3.send(
-        new GetObjectCommand({
-          Bucket: process.env.R2_BUCKET,
-          Key: key,
-        })
-      );
-
-      const contentLength = Number(response.ContentLength || 0);
-      if (!Number.isNaN(contentLength) && contentLength > maxBytes) {
-        const error = new Error('Requested object exceeds size limits');
-        error.status = 413;
-        throw error;
-      }
-
-      const bodyBuffer = await streamToBuffer(response.Body, maxBytes);
-
-      return {
-        status: 200,
-        buffer: bodyBuffer,
-        contentLength: bodyBuffer.length,
-        contentType: response.ContentType || 'application/octet-stream',
-      };
-    } catch (error) {
-      lastError = error;
-      const status = error?.$metadata?.httpStatusCode || error.status;
-      if (status === 404) return { status: 404 };
-      continue;
+    const contentLength = Number(response.ContentLength || 0);
+    if (!Number.isNaN(contentLength) && contentLength > maxBytes) {
+      const error = new Error('Requested object exceeds size limits');
+      error.status = 413;
+      throw error;
     }
-  }
 
-  throw lastError;
+    const bodyBuffer = await streamToBuffer(response.Body, maxBytes);
+
+    return {
+      status: 200,
+      buffer: bodyBuffer,
+      contentLength: bodyBuffer.length,
+      contentType: response.ContentType || 'application/octet-stream',
+    };
+  } catch (error) {
+    const status = error?.$metadata?.httpStatusCode || error.status;
+    if (status === 404) {
+      return { status: 404 };
+    }
+    error.status = status || 500;
+    throw error;
+  }
 };
 
 export const listR2Prefixes = async (prefix) => {
-  const styles =
-    process.env.R2_ADDRESSING_STYLE === 'virtual'
-      ? [false]
-      : process.env.R2_ADDRESSING_STYLE === 'path'
-      ? [true]
-      : [true, false]; // try path then virtual
+  const s3 = getClient();
 
-  let lastError;
-  for (const forcePathStyle of styles) {
-    try {
-      const s3 = makeClient(forcePathStyle);
-      const response = await s3.send(
-        new ListObjectsV2Command({
-          Bucket: process.env.R2_BUCKET,
-          Prefix: prefix,
-          Delimiter: '/',
-          MaxKeys: 1000,
-        })
-      );
+  try {
+    const response = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.R2_BUCKET,
+        Prefix: prefix,
+        Delimiter: '/',
+        MaxKeys: 1000,
+      })
+    );
 
-      const prefixes =
-        response.CommonPrefixes?.map((p) => p.Prefix).filter(Boolean) || [];
+    const prefixes =
+      response.CommonPrefixes?.map((p) => p.Prefix).filter(Boolean) || [];
 
-      return prefixes;
-    } catch (error) {
-      lastError = error;
-      const status = error?.$metadata?.httpStatusCode || error.status;
-      if (status === 404) return [];
-      continue;
+    return prefixes;
+  } catch (error) {
+    const status = error?.$metadata?.httpStatusCode || error.status;
+    if (status === 404) {
+      return [];
     }
+    error.status = status || 500;
+    throw error;
   }
-
-  throw lastError;
 };
