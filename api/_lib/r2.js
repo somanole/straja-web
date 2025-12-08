@@ -55,7 +55,12 @@ const encodeQuery = (query) =>
     .filter(Boolean)
     .join('&');
 
-const buildSignedUrl = ({ method = 'GET', key, query = {}, style = 'virtual' }) => {
+const buildSignedUrl = ({
+  method = 'GET',
+  key,
+  query = {},
+  style = 'virtual',
+}) => {
   const { accessKeyId, secretAccessKey, endpoint, bucket } =
     getAwsCredentials();
 
@@ -63,10 +68,27 @@ const buildSignedUrl = ({ method = 'GET', key, query = {}, style = 'virtual' }) 
   const encodedPath = encodePath(key);
   const canonicalQuery = encodeQuery(query);
 
-  const host =
-    style === 'path' ? baseUrl.host : `${bucket}.${baseUrl.host}`;
-  const path =
-    style === 'path' ? `/${bucket}/${encodedPath}` : `/${encodedPath}`;
+  const basePath = baseUrl.pathname.replace(/\/+$/, '');
+  const bucketInHost = baseUrl.host.startsWith(`${bucket}.`);
+  const bucketInPath =
+    basePath === `/${bucket}` || basePath === `/${bucket}/`;
+
+  let host = baseUrl.host;
+  let path = `/${encodedPath}`;
+
+  if (bucketInHost) {
+    host = baseUrl.host;
+    path = `${basePath}/${encodedPath}`.replace(/\/+/g, '/');
+  } else if (bucketInPath) {
+    host = baseUrl.host;
+    path = `${basePath}/${encodedPath}`.replace(/\/+/g, '/');
+  } else if (style === 'path') {
+    host = baseUrl.host;
+    path = `${basePath}/${bucket}/${encodedPath}`.replace(/\/+/g, '/');
+  } else {
+    host = `${bucket}.${baseUrl.host}`;
+    path = `${basePath}/${encodedPath}`.replace(/\/+/g, '/');
+  }
 
   const url = new URL(`${baseUrl.protocol}//${host}${path}`);
   url.search = canonicalQuery;
