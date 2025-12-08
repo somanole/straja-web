@@ -84,7 +84,7 @@ const buildRequest = ({ key, query = {}, addressing = 'virtual' }) => {
   const now = new Date();
   const amzDate = toAmzDate(now);
   const dateStamp = toDateStamp(now);
-  const payloadHash = sha256Hex('');
+  const payloadHash = 'UNSIGNED-PAYLOAD';
 
   const canonicalHeaders = [
     `host:${url.host}`,
@@ -141,7 +141,7 @@ const buildRequest = ({ key, query = {}, addressing = 'virtual' }) => {
 export const fetchR2Object = async (key) => {
   const addressingStyle = process.env.R2_ADDRESSING_STYLE || 'auto'; // auto | virtual | path
   const stylesToTry =
-    addressingStyle === 'auto' ? ['virtual', 'path'] : [addressingStyle];
+    addressingStyle === 'auto' ? ['path', 'virtual'] : [addressingStyle];
 
   let lastError;
   for (const style of stylesToTry) {
@@ -262,7 +262,7 @@ const parseXmlPrefixes = (xmlString) => {
 export const listR2Prefixes = async (prefix) => {
   const addressingStyle = process.env.R2_ADDRESSING_STYLE || 'auto';
   const stylesToTry =
-    addressingStyle === 'auto' ? ['virtual', 'path'] : [addressingStyle];
+    addressingStyle === 'auto' ? ['path', 'virtual'] : [addressingStyle];
 
   let lastError;
   for (const style of stylesToTry) {
