@@ -8,7 +8,6 @@ import {
 } from '../_lib/license.js';
 import {
   BUNDLE_MODEL_KEY,
-  buildBaseUrl,
   computeLicenseValidUntil,
   getEntitlementsForTier,
   hasEntitlement,
@@ -128,16 +127,18 @@ export default async function handler(req, res) {
       currentVersion && currentVersion === latestVersion ? false : true;
 
     const entitlements = getEntitlementsForTier(record.tier);
-    const baseUrl = buildBaseUrl(req);
-    const manifestUrl = `${baseUrl}/api/intel/${BUNDLE_MODEL_KEY}/manifest?version=${encodeURIComponent(
-      latestVersion
-    )}`;
-    const signatureUrl = `${baseUrl}/api/intel/${BUNDLE_MODEL_KEY}/signature?version=${encodeURIComponent(
-      latestVersion
-    )}`;
-    const fileBaseUrl = `${baseUrl}/api/intel/${BUNDLE_MODEL_KEY}/file?version=${encodeURIComponent(
-      latestVersion
-    )}&path=`;
+    const baseEnv = process.env.STRAJAGUARD_BUNDLE_BASE_URL || '';
+    const trimmedBase = baseEnv.replace(/\/+$/, '');
+    if (!trimmedBase) {
+      return res.status(500).json({
+        status: 'error',
+        message: 'STRAJAGUARD_BUNDLE_BASE_URL is not configured',
+      });
+    }
+
+    const manifestUrl = `${trimmedBase}/${latestVersion}/manifest.json`;
+    const signatureUrl = `${trimmedBase}/${latestVersion}/manifest.sig`;
+    const fileBaseUrl = `${trimmedBase}/${latestVersion}/`;
 
     const bundleToken = issueBundleToken({
       licenseKey,
