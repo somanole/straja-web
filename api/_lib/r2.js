@@ -16,9 +16,6 @@ const toAmzDate = (date) => {
 
 const toDateStamp = (date) => toAmzDate(date).slice(0, 8);
 
-const sha256Hex = (value) =>
-  crypto.createHash('sha256').update(value).digest('hex');
-
 const hmac = (key, value) =>
   crypto.createHmac('sha256', key).update(value).digest();
 
@@ -97,7 +94,7 @@ const buildSignedUrl = ({
   const amzDate = toAmzDate(now);
   const dateStamp = toDateStamp(now);
 
-  const payloadHash = sha256Hex('');
+  const payloadHash = 'UNSIGNED-PAYLOAD';
 
   const canonicalHeaders = [
     `host:${url.host}`,

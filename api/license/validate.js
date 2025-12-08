@@ -108,7 +108,16 @@ export default async function handler(req, res) {
       });
     }
 
-    const latestVersion = await getLatestBundleVersion();
+    let latestVersion;
+    try {
+      latestVersion = await getLatestBundleVersion();
+    } catch (error) {
+      console.error('Failed to resolve latest bundle version:', error);
+      return res.status(503).json({
+        status: 'unavailable',
+        message: 'Latest bundle version unavailable',
+      });
+    }
     const clientBundleInfo = body?.bundles?.[BUNDLE_MODEL_KEY];
     const currentVersion =
       clientBundleInfo && typeof clientBundleInfo.current_version === 'string'
