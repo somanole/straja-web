@@ -1,6 +1,6 @@
 import { BUNDLE_MODEL_KEY } from '../../_lib/bundle-config.js';
 import { requireBundleAuthorization } from '../../_lib/bundle-auth.js';
-import { fetchR2Object } from '../../_lib/r2.js';
+import { fetchBundleObject } from '../../_lib/bundle-keys.js';
 import { getLatestBundleVersion } from '../../_lib/version.js';
 
 const extractVersion = (req) => {
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   const key = `${BUNDLE_MODEL_KEY}/${version}/manifest.sig`;
 
   try {
-    const result = await fetchR2Object(key);
+    const result = await fetchBundleObject(version, 'manifest.sig');
     if (result.status === 404) {
       return res.status(404).json({ error: 'Signature not found' });
     }
