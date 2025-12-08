@@ -51,10 +51,9 @@ const encodePath = (value) =>
     .map((segment) => encodeURIComponent(segment))
     .join('/');
 
-const buildRequest = ({ key, query = {} }) => {
+const buildRequest = ({ key, query = {}, addressing = 'virtual' }) => {
   const { accessKeyId, secretAccessKey, endpoint, bucket } = getCreds();
 
-  const addressing = process.env.R2_ADDRESSING_STYLE || 'virtual'; // virtual | path
   const encodedKey = encodePath(key);
 
   let host;
@@ -85,7 +84,7 @@ const buildRequest = ({ key, query = {} }) => {
   const now = new Date();
   const amzDate = toAmzDate(now);
   const dateStamp = toDateStamp(now);
-  const payloadHash = 'UNSIGNED-PAYLOAD';
+  const payloadHash = sha256Hex('');
 
   const canonicalHeaders = [
     `host:${url.host}`,
@@ -140,7 +139,68 @@ const buildRequest = ({ key, query = {} }) => {
 };
 
 export const fetchR2Object = async (key) => {
-  const { url, headers } = buildRequest({ key });
+  const addressingStyle = process.env.R2_ADDRESSING_STYLE || 'auto'; // auto | virtual | path
+  const stylesToTry =
+    addressingStyle === 'auto' ? ['virtual', 'path'] : [addressingStyle];
+
+  let lastError;
+  for (const style of stylesToTry) {
+    try {
+      const { url, headers } = buildRequest({ key, addressing: style });
+      const maxBytes = getMaxBundleBytes();
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (response.status === 404) {
+        return { status: 404 };
+      }
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        const error = new Error(
+          `Failed to fetch R2 object (${response.status}): ${body || 'unknown'}`
+        );
+        error.status = response.status;
+        throw error;
+      }
+
+      const contentLengthHeader = response.headers.get('content-length');
+      if (contentLengthHeader) {
+        const length = Number(contentLengthHeader);
+        if (!Number.isNaN(length) && length > maxBytes) {
+          const error = new Error('Requested object exceeds size limits');
+          error.status = 413;
+          throw error;
+        }
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      if (arrayBuffer.byteLength > maxBytes) {
+        const error = new Error('Requested object exceeds size limits');
+        error.status = 413;
+        throw error;
+      }
+
+      const contentType =
+        response.headers.get('content-type') || 'application/octet-stream';
+
+      return {
+        status: 200,
+        buffer: Buffer.from(arrayBuffer),
+        contentLength: arrayBuffer.byteLength,
+        contentType,
+      };
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+
+  throw lastError;
+};
   const maxBytes = getMaxBundleBytes();
 
   const response = await fetch(url, {
@@ -200,30 +260,45 @@ const parseXmlPrefixes = (xmlString) => {
 };
 
 export const listR2Prefixes = async (prefix) => {
-  const { url, headers } = buildRequest({
-    key: '',
-    query: {
-      'list-type': '2',
-      delimiter: '/',
-      'max-keys': '1000',
-      prefix,
-    },
-  });
+  const addressingStyle = process.env.R2_ADDRESSING_STYLE || 'auto';
+  const stylesToTry =
+    addressingStyle === 'auto' ? ['virtual', 'path'] : [addressingStyle];
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers,
-  });
+  let lastError;
+  for (const style of stylesToTry) {
+    try {
+      const { url, headers } = buildRequest({
+        key: '',
+        query: {
+          'list-type': '2',
+          delimiter: '/',
+          'max-keys': '1000',
+          prefix,
+        },
+        addressing: style,
+      });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    const error = new Error(
-      `Failed to list R2 objects (${response.status}): ${body || 'unknown'}`
-    );
-    error.status = response.status;
-    throw error;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        const error = new Error(
+          `Failed to list R2 objects (${response.status}): ${body || 'unknown'}`
+        );
+        error.status = response.status;
+        throw error;
+      }
+
+      const text = await response.text();
+      return parseXmlPrefixes(text);
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
   }
 
-  const text = await response.text();
-  return parseXmlPrefixes(text);
+  throw lastError;
 };
