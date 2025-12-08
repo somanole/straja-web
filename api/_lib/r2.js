@@ -17,14 +17,23 @@ const getClient = () => {
     );
   }
 
+  const url = new URL(endpoint);
+
+  let forcePathStyle;
+  const style = process.env.R2_ADDRESSING_STYLE;
+  if (style === 'path') {
+    forcePathStyle = true;
+  } else if (style === 'virtual') {
+    forcePathStyle = false;
+  } else {
+    // Auto-detect: if endpoint host already includes the bucket, use virtual, otherwise path.
+    forcePathStyle = !url.host.startsWith(`${bucket}.`);
+  }
+
   client = new S3Client({
     region: 'auto',
-    endpoint,
-    // R2 often prefers path-style; allow env override but default to true
-    forcePathStyle:
-      process.env.R2_ADDRESSING_STYLE === 'virtual'
-        ? false
-        : true,
+    endpoint: url.toString(),
+    forcePathStyle,
     credentials: {
       accessKeyId,
       secretAccessKey,
