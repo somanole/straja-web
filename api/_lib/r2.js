@@ -40,19 +40,36 @@ const getAwsCredentials = () => {
 const encodePath = (value) =>
   value
     .split('/')
-    .filter(Boolean)
+    .filter((segment) => segment !== '')
     .map((segment) => encodeURIComponent(segment))
     .join('/');
 
-const signGetRequest = (key) => {
+const encodeQuery = (query) =>
+  Object.keys(query)
+    .sort()
+    .map((key) => {
+      const val = query[key];
+      if (val === undefined || val === null) return '';
+      return `${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`;
+    })
+    .filter(Boolean)
+    .join('&');
+
+const buildSignedUrl = ({ method = 'GET', key, query = {}, style = 'virtual' }) => {
   const { accessKeyId, secretAccessKey, endpoint, bucket } =
     getAwsCredentials();
 
   const baseUrl = new URL(endpoint);
-  const hostWithBucket = `${bucket}.${baseUrl.host}`;
   const encodedPath = encodePath(key);
-  const path = `/${encodedPath}`;
-  const url = new URL(`${baseUrl.protocol}//${hostWithBucket}${path}`);
+  const canonicalQuery = encodeQuery(query);
+
+  const host =
+    style === 'path' ? baseUrl.host : `${bucket}.${baseUrl.host}`;
+  const path =
+    style === 'path' ? `/${bucket}/${encodedPath}` : `/${encodedPath}`;
+
+  const url = new URL(`${baseUrl.protocol}//${host}${path}`);
+  url.search = canonicalQuery;
 
   const now = new Date();
   const amzDate = toAmzDate(now);
@@ -71,9 +88,9 @@ const signGetRequest = (key) => {
   const signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
 
   const canonicalRequest = [
-    'GET',
+    method,
     path,
-    '', // query string
+    canonicalQuery,
     `${canonicalHeaders}\n`,
     signedHeaders,
     payloadHash,
@@ -114,52 +131,108 @@ const signGetRequest = (key) => {
   return { url: url.toString(), headers };
 };
 
-export const fetchR2Object = async (key) => {
-  const { url, headers } = signGetRequest(key);
-  const maxBytes = getMaxBundleBytes();
+const defaultAddressingStyle =
+  process.env.R2_ADDRESSING_STYLE || 'auto'; // auto | virtual | path
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers,
-  });
+const performSignedRequest = async ({ key, query, expectBinary = true }) => {
+  const stylesToTry =
+    defaultAddressingStyle === 'auto'
+      ? ['virtual', 'path']
+      : [defaultAddressingStyle];
 
-  if (response.status === 404) {
-    return { status: 404 };
-  }
+  let lastError;
+  for (const style of stylesToTry) {
+    try {
+      const { url, headers } = buildSignedUrl({ key, query, style });
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    const error = new Error(
-      `Failed to fetch R2 object (${response.status}): ${body || 'unknown'}`
-    );
-    error.status = response.status;
-    throw error;
-  }
+      if (response.status === 404) {
+        return { status: 404 };
+      }
 
-  const contentLengthHeader = response.headers.get('content-length');
-  if (contentLengthHeader) {
-    const length = Number(contentLengthHeader);
-    if (!Number.isNaN(length) && length > maxBytes) {
-      const error = new Error('Requested object exceeds size limits');
-      error.status = 413;
-      throw error;
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        const error = new Error(
+          `Failed to fetch R2 object (${response.status}): ${body || 'unknown'}`
+        );
+        error.status = response.status;
+        throw error;
+      }
+
+      if (!expectBinary) {
+        const text = await response.text();
+        return { status: 200, text };
+      }
+
+      const maxBytes = getMaxBundleBytes();
+      const contentLengthHeader = response.headers.get('content-length');
+      if (contentLengthHeader) {
+        const length = Number(contentLengthHeader);
+        if (!Number.isNaN(length) && length > maxBytes) {
+          const error = new Error('Requested object exceeds size limits');
+          error.status = 413;
+          throw error;
+        }
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      if (arrayBuffer.byteLength > maxBytes) {
+        const error = new Error('Requested object exceeds size limits');
+        error.status = 413;
+        throw error;
+      }
+
+      const contentType =
+        response.headers.get('content-type') || 'application/octet-stream';
+
+      return {
+        status: 200,
+        buffer: Buffer.from(arrayBuffer),
+        contentLength: arrayBuffer.byteLength,
+        contentType,
+      };
+    } catch (error) {
+      lastError = error;
+      // Try next style if available
+      continue;
     }
   }
 
-  const arrayBuffer = await response.arrayBuffer();
-  if (arrayBuffer.byteLength > maxBytes) {
-    const error = new Error('Requested object exceeds size limits');
-    error.status = 413;
-    throw error;
+  throw lastError;
+};
+
+export const fetchR2Object = async (key) => {
+  return performSignedRequest({ key, query: {}, expectBinary: true });
+};
+
+const parseXmlPrefixes = (xmlString) => {
+  const prefixes = [];
+  const regex = /<Prefix>([^<]+)<\/Prefix>/g;
+  let match;
+  while ((match = regex.exec(xmlString)) !== null) {
+    prefixes.push(match[1]);
   }
+  return prefixes;
+};
 
-  const contentType =
-    response.headers.get('content-type') || 'application/octet-stream';
-
-  return {
-    status: 200,
-    buffer: Buffer.from(arrayBuffer),
-    contentLength: arrayBuffer.byteLength,
-    contentType,
+export const listR2Prefixes = async (prefix) => {
+  const query = {
+    'list-type': '2',
+    delimiter: '/',
+    prefix,
+    'max-keys': '1000',
   };
+
+  const result = await performSignedRequest({
+    key: '',
+    query,
+    expectBinary: false,
+  });
+
+  if (result.status === 404) return [];
+
+  return parseXmlPrefixes(result.text || '');
 };
