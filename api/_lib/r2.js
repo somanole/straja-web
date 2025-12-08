@@ -8,20 +8,20 @@ const getClient = () => {
 
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const endpoint = process.env.R2_ENDPOINT_URL;
+  const accountId = process.env.R2_ACCOUNT_ID;
   const bucket = process.env.R2_BUCKET;
 
-  if (!accessKeyId || !secretAccessKey || !endpoint || !bucket) {
+  if (!accessKeyId || !secretAccessKey || !accountId || !bucket) {
     throw new Error(
-      'Missing R2 configuration. Ensure R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT_URL, and R2_BUCKET are set.'
+      'Missing R2 configuration. Ensure R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID, and R2_BUCKET are set.'
     );
   }
 
-  // Cloudflare R2 recommends path-style with account endpoint: https://<accountid>.r2.cloudflarestorage.com
-  const url = new URL(endpoint);
+  const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+
   client = new S3Client({
     region: 'auto',
-    endpoint: url.toString(),
+    endpoint,
     forcePathStyle: true,
     credentials: {
       accessKeyId,

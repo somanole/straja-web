@@ -19,6 +19,18 @@ const parseLatestFromManifest = (buffer) => {
 };
 
 export const getLatestBundleVersion = async () => {
+  // 1) Env override for dev / debug
+  const forced = process.env.STRAJAGUARD_LATEST_VERSION;
+  if (forced && typeof forced === 'string' && forced.trim() !== '') {
+    const v = forced.trim();
+    if (cachedVersion !== v) {
+      cachedVersion = v;
+      cachedAt = Date.now();
+    }
+    return v;
+  }
+
+  // 2) Existing cache logic
   // Use a short cache to avoid hammering R2
   if (cachedVersion && Date.now() - cachedAt < cacheTtlMs) {
     return cachedVersion;
